@@ -355,7 +355,7 @@ app
   .use(bodyParser.urlencoded({ extended: true }))
   .use(express.static(path.join(__dirname, "public")))
   .post("/login", postLogin)
-  .get("/users", checkTokenEmployee, getUsers)
+  .get("/users", getUsers)
   .post("/users", checkTokenEmployee, upload.single("profile"), postUser)
   .put("/users/:id", checkTokenEmployee, updateUser)
   .post("/seedUsers", seedUsers)
