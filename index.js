@@ -17,7 +17,7 @@ const seedUser = require("./seeder/seedUser");
 
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: false,
+  ssl: true,
   user: config.user,
   host: config.host,
   database: config.database,
