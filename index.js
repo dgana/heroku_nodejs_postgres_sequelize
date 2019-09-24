@@ -17,7 +17,7 @@ const seedUser = require("./seeder/seedUser");
 
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: false,
+  ssl: true,
   user: config.user,
   host: config.host,
   database: config.database,
@@ -245,7 +245,7 @@ sequelize.sync();
 
 const seedUsers = async (req, res) => {
   try {
-    await User.destroy({ truncate: true });
+    await User.drop();
     const result = await User.bulkCreate(seedUser);
     res.status(200).json(result);
   } catch (error) {
