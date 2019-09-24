@@ -292,7 +292,7 @@ const checkTokenEmployee = (req, res, next) => {
     }
   } catch (error) {
     return res.status(401).json({
-      message: "unauthorized"
+      message: "Unauthorized"
     });
   }
 };
@@ -343,19 +343,20 @@ const postLogin = async (request, response) => {
         message: "Wrong email!"
       });
     }
-  } catch (error) {}
+  } catch (error) {
+    response.status(401).json({
+      message: "Unauthorized"
+    });
+  }
 };
 
 app
   .use(bodyParser.json())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(express.static(path.join(__dirname, "public")))
-  .set("views", path.join(__dirname, "views"))
-  .set("view engine", "ejs")
-  .get("/", (req, res) => res.render("pages/index"))
   .post("/login", postLogin)
   .get("/users", checkTokenEmployee, getUsers)
   .post("/users", checkTokenEmployee, upload.single("profile"), postUser)
   .put("/users/:id", checkTokenEmployee, updateUser)
-  .post("/seedUsers", checkTokenEmployee, seedUsers)
+  .post("/seedUsers", seedUsers)
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
