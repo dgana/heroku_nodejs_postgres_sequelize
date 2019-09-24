@@ -25,6 +25,9 @@ const pool = new Pool({
   port: 5432
 });
 
+const client = await pool.connect();
+client.release();
+
 // Passing parameters separately
 const sequelize = new Sequelize(config.database, config.user, config.password, {
   host: config.host,
@@ -242,7 +245,7 @@ sequelize.sync();
 
 const seedUsers = async (req, res) => {
   try {
-    // await User.destroy({ truncate: true });
+    await User.destroy({ truncate: true });
     const result = await User.bulkCreate(seedUser);
     res.status(200).json(result);
   } catch (error) {
