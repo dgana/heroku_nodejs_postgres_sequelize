@@ -17,7 +17,7 @@ const seedUser = require("./seeder/seedUser");
 
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: true,
+  ssl: false,
   user: config.user,
   host: config.host,
   database: config.database,
@@ -25,8 +25,8 @@ const pool = new Pool({
   port: 5432
 });
 
-const client = await pool.connect();
-client.release();
+// const client = await pool.connect();
+// client.release();
 
 // Passing parameters separately
 const sequelize = new Sequelize(config.database, config.user, config.password, {
