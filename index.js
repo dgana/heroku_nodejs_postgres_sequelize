@@ -7,7 +7,7 @@ const path = require("path");
 const PORT = process.env.PORT || 5000;
 const config = require("./config");
 const seedUser = require("./seeder/seedUser");
-
+const JWT = require("jsonwebtoken");
 const app = express();
 
 app.use(bodyParser.json());
@@ -51,6 +51,10 @@ const User = sequelize.define("user", {
   },
   group: {
     type: Sequelize.STRING
+  },
+  role: {
+    type: Sequelize.ENUM,
+    values: ["employee", "manager", "hcmga"]
   },
   email: {
     type: Sequelize.STRING,
@@ -326,6 +330,36 @@ const getUsers = async (request, response) => {
   }
 };
 
+const postLogin = async (req, res) => {
+  try {
+    const checkUser = User.findOne({
+      where: {
+        email: req.body.email
+      }
+    });
+    if (checkUser) {
+      if (checkUser.password === req.body.password) {
+        var token = JWT.sign(
+          { id: checkUser.id, role: checkUser.role },
+          process.env.SECRET_KEY
+        );
+        response.status(200).json({
+          message: "You have succesfully logged in!",
+          token
+        });
+      } else {
+        response.status(400).json({
+          message: "Wrong password!"
+        });
+      }
+    } else {
+      response.status(400).json({
+        message: "Wrong email!"
+      });
+    }
+  } catch (error) {}
+};
+
 app
   .use(express.static(path.join(__dirname, "public")))
   .set("views", path.join(__dirname, "views"))
@@ -345,6 +379,7 @@ app
       res.send("Error " + err);
     }
   })
+  .post("/login", postUser)
   .get("/users", getUsers)
   .post("/users", postUser)
   .post("/seedUsers", seedUsers)
