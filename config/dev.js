@@ -3,5 +3,6 @@ module.exports = {
   database: process.env.DATABASE_DEV,
   user: process.env.USER_DEV,
   password: process.env.PASSWORD_DEV,
-  databaseUrl: process.env.DATABASE_URL_DEV
+  databaseUrl: process.env.DATABASE_URL_DEV,
+  baseUrl: process.env.BASE_URL_DEV
 };
