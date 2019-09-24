@@ -1,50 +1,49 @@
-const Sequelize = require('sequelize');
-const bodyParser = require('body-parser')
-const { Pool } = require('pg');
-const cool = require('cool-ascii-faces')
-const express = require('express')
-const path = require('path')
-const PORT = process.env.PORT || 5000
+const Sequelize = require("sequelize");
+const bodyParser = require("body-parser");
+const { Pool } = require("pg");
+const cool = require("cool-ascii-faces");
+const express = require("express");
+const path = require("path");
+const PORT = process.env.PORT || 5000;
 
-const app = express()
+const app = express();
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
-    extended: true,
+    extended: true
   })
-)
+);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: false,
-  user: 'dgana',
-  host: 'localhost',
-  database: 'goess',
-  password: 'password',
-  port: 5432,
+  user: "dgana",
+  host: "localhost",
+  database: "goess",
+  password: "password",
+  port: 5432
 });
 
 // Passing parameters separately
-const sequelize = new Sequelize('goess', 'dgana', 'password', {
-  host: 'localhost',
-  dialect: 'postgres' /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */
+const sequelize = new Sequelize("goess", "dgana", "password", {
+  host: "localhost",
+  dialect: "postgres" /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */
 });
 
 sequelize
   .authenticate()
   .then(() => {
-    console.log('Connection has been established successfully.');
+    console.log("Connection has been established successfully.");
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err);
+    console.error("Unable to connect to the database:", err);
   });
-
 
 /**
  * TABLE USER
  */
-const User = sequelize.define('user', {
+const User = sequelize.define("user", {
   name: {
     type: Sequelize.STRING
   },
@@ -61,7 +60,7 @@ const User = sequelize.define('user', {
   },
   gender: {
     type: Sequelize.ENUM,
-    values: ['male', 'female']
+    values: ["male", "female"]
   },
   superior_id: {
     type: Sequelize.INTEGER
@@ -87,238 +86,263 @@ const User = sequelize.define('user', {
   division: {
     type: Sequelize.STRING
   }
-}, {
-  // options
+});
+
+User.belongsTo(User, {
+  as: "superior",
+  foreignKey: "superior_id"
+});
+
+User.hasMany(User, {
+  as: "junior",
+  foreignKey: "superior_id"
 });
 
 /**
  * TABLE PERMIT
  */
-const Permit = sequelize.define('permit', {
-  name: {
-    type: Sequelize.STRING
+const Permit = sequelize.define(
+  "permit",
+  {
+    name: {
+      type: Sequelize.STRING
+    },
+    created_by: {
+      type: Sequelize.INTEGER
+    },
+    start_date: {
+      type: Sequelize.DATE
+    },
+    end_date: {
+      type: Sequelize.DATE
+    },
+    start_time: {
+      type: Sequelize.DATE
+    },
+    end_time: {
+      type: Sequelize.DATE
+    },
+    working_shift: {
+      type: Sequelize.INTEGER
+    },
+    notes: {
+      type: Sequelize.STRING
+    },
+    manager_id: {
+      type: Sequelize.STRING
+    },
+    hcmga_id: {
+      type: Sequelize.STRING
+    }
   },
-  created_by: {
-    type: Sequelize.INTEGER
-  },
-  start_date: {
-    type: Sequelize.DATE
-  },
-  end_date: {
-    type: Sequelize.DATE
-  },
-  start_time: {
-    type: Sequelize.DATE
-  },
-  end_time: {
-    type: Sequelize.DATE
-  },
-  working_shift: {
-    type: Sequelize.INTEGER
-  },
-  notes: {
-    type: Sequelize.STRING
-  },
-  manager_id: {
-    type: Sequelize.STRING
-  },
-  hcmga_id: {
-    type: Sequelize.STRING
+  {
+    // options
   }
-  // notes_manager: {
-  //   type: sequelize.STRING
-  // },
-  // notes_hcmga: {
-  //   type: Sequelize.STRING
-  // },
-  // status_manager: {
-  //   type: Sequelize.ENUM,
-  //   values: ['waiting', 'rejected', 'approved']
-  // },
-  // status_hcmga: {
-  //   type: Sequelize.ENUM,
-  //   values: ['waiting', 'rejected', 'approved']
-  // },
-  // approved_by_manager: {
-  //   type: Sequelize.INTEGER
-  // },
-  // approved_by_hcmga: {
-  //   type: Sequelize.INTEGER
-  // },
-  // rejected_by_manager: {
-  //   type: Sequelize.INTEGER
-  // },
-  // rejected_by_hcmga: {
-  //   type: Sequelize.INTEGER
-  // }
-}, {
-  // options
-});
+);
 
 /**
  * TABLE LEAVE
  */
-const Leave = sequelize.define('leave', {
-  name: {
-    type: Sequelize.STRING
+const Leave = sequelize.define(
+  "leave",
+  {
+    name: {
+      type: Sequelize.STRING
+    },
+    created_by: {
+      type: Sequelize.INTEGER
+    },
+    start_date: {
+      type: Sequelize.DATE
+    },
+    end_date: {
+      type: Sequelize.DATE
+    },
+    notes: {
+      type: Sequelize.STRING
+    },
+    manager_id: {
+      type: Sequelize.STRING
+    },
+    hcmga_id: {
+      type: Sequelize.STRING
+    }
   },
-  created_by: {
-    type: Sequelize.INTEGER
-  },
-  start_date: {
-    type: Sequelize.DATE
-  },
-  end_date: {
-    type: Sequelize.DATE
-  },
-  notes: {
-    type: Sequelize.STRING
-  },
-  manager_id: {
-    type: Sequelize.STRING
-  },
-  hcmga_id: {
-    type: Sequelize.STRING
+  {
+    // options
   }
-}, {
-  // options
-});
+);
 
 /**
  * TABLE TRAVEL
  */
-const Travel = sequelize.define('travel', {
-  name: {
-    type: Sequelize.STRING
+const Travel = sequelize.define(
+  "travel",
+  {
+    name: {
+      type: Sequelize.STRING
+    },
+    created_by: {
+      type: Sequelize.INTEGER
+    },
+    start_date: {
+      type: Sequelize.DATE
+    },
+    end_date: {
+      type: Sequelize.DATE
+    },
+    destination: {
+      type: Sequelize.STRING
+    },
+    agenda: {
+      type: Sequelize.STRING
+    },
+    advance_amount: {
+      type: Sequelize.INTEGER
+    },
+    notes: {
+      type: Sequelize.STRING
+    },
+    manager_id: {
+      type: Sequelize.STRING
+    },
+    hcmga_id: {
+      type: Sequelize.STRING
+    }
   },
-  created_by: {
-    type: Sequelize.INTEGER
+  {
+    // options
   },
-  start_date: {
-    type: Sequelize.DATE
-  },
-  end_date: {
-    type: Sequelize.DATE
-  },
-  destination: {
-    type: Sequelize.STRING
-  },
-  agenda: {
-    type: Sequelize.STRING
-  },
-  advance_amount: {
-    type: Sequelize.INTEGER
-  },
-  notes: {
-    type: Sequelize.STRING
-  },
-  manager_id: {
-    type: Sequelize.STRING
-  },
-  hcmga_id: {
-    type: Sequelize.STRING
+  {
+    associate: models => {
+      models.Travel.belongsTo(models.ManagerApproval);
+    }
   }
-}, {
-  // options
-}, {
-  associate: (models) => {
-    models.Travel.belongsTo(models.ManagerApproval)
-  }
-});
+);
 
 // TABLE MANAGER APPROVAL
-const ManagerApproval = sequelize.define('manager', {
-  notes: {
-    type: Sequelize.STRING
+const ManagerApproval = sequelize.define(
+  "manager",
+  {
+    notes: {
+      type: Sequelize.STRING
+    },
+    status: {
+      type: Sequelize.ENUM,
+      values: ["waiting", "rejected", "approved"]
+    },
+    approved_by: {
+      type: Sequelize.INTEGER
+    },
+    rejected_by: {
+      type: Sequelize.INTEGER
+    }
   },
-  status: {
-    type: Sequelize.ENUM,
-    values: ['waiting', 'rejected', 'approved']
+  {
+    // options
   },
-  approved_by: {
-    type: Sequelize.INTEGER
-  },
-  rejected_by: {
-    type: Sequelize.INTEGER
+  {
+    associate: models => {
+      models.ManagerApproval.hasMany(models.Travel);
+    }
   }
-}, {
-  // options
-}, {
-  associate: (models) => {
-    models.ManagerApproval.hasMany(models.Travel)
-  }
-});
+);
 
 // TABLE HCMGA APPROVAL
-const HCMGAApproval = sequelize.define('manager', {
-  notes: {
-    type: Sequelize.STRING
-  },
-  status: {
-    type: Sequelize.ENUM,
-    values: ['waiting', 'rejected', 'approved']
-  },
-  approved_by: {
-    type: Sequelize.INTEGER
-  },
-  rejected_by: {
-    type: Sequelize.INTEGER
-  }
-}, {
-  // options
-});
-
-sequelize.sync()
-
-const postUser = async (req, res) => { 
-  try {
-    const tes = await User.create(req.body)
-    return tes
-  } catch (error) {
-    console.log(error)
-  }
-}
-
-const getUsers = (request, response) => {
-  pool.query('SELECT * FROM users', (error, results) => {
-    if (error) {
-      throw error
+const HCMGAApproval = sequelize.define(
+  "manager",
+  {
+    notes: {
+      type: Sequelize.STRING
+    },
+    status: {
+      type: Sequelize.ENUM,
+      values: ["waiting", "rejected", "approved"]
+    },
+    approved_by: {
+      type: Sequelize.INTEGER
+    },
+    rejected_by: {
+      type: Sequelize.INTEGER
     }
-    response.status(200).json(results.rows)
-  })
-}
+  },
+  {
+    // options
+  }
+);
+
+sequelize.sync();
+
+const postUser = async (req, res) => {
+  try {
+    const result = await User.create(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateUser = async (req, res) => {
+  var id = req.params.id;
+  try {
+    const result = await User.update(req.body, {
+      where: {
+        id
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getUsers = async (request, response) => {
+  try {
+    const result = await User.findAll({
+      include: [
+        {
+          model: User,
+          as: "superior",
+          attributes: ["id", "name"]
+        }
+      ],
+      attributes: ["id", "name", "group", "email", "password", "gender"]
+    });
+    response.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 app
-  .use(express.static(path.join(__dirname, 'public')))
-  .set('views', path.join(__dirname, 'views'))
-  .set('view engine', 'ejs')
-  .get('/', (req, res) => res.render('pages/index'))
-  .get('/cool', (req, res) => res.send(cool()))
-  .get('/times', (req, res) => res.send(showTimes()))
-  .get('/db', async (req, res) => {
+  .use(express.static(path.join(__dirname, "public")))
+  .set("views", path.join(__dirname, "views"))
+  .set("view engine", "ejs")
+  .get("/", (req, res) => res.render("pages/index"))
+  .get("/cool", (req, res) => res.send(cool()))
+  .get("/times", (req, res) => res.send(showTimes()))
+  .get("/db", async (req, res) => {
     try {
-      const client = await pool.connect()
-      const result = await client.query('SELECT * FROM users');
-      const results = { 'results': (result) ? result.rows : null};
-      res.render('pages/db', results );
+      const client = await pool.connect();
+      const result = await client.query("SELECT * FROM users");
+      const results = { results: result ? result.rows : null };
+      res.render("pages/db", results);
       client.release();
     } catch (err) {
       console.error(err);
       res.send("Error " + err);
     }
   })
-  .get('/users', getUsers)
-  .post('/users', postUser({
-    name: 'dhegana',
-    email: 'dhegana@gmail.com'
-  }))
-  .listen(PORT, () => console.log(`Listening on ${ PORT }`))
+  .get("/users", getUsers)
+  .post("/users", postUser)
+  .put("/users/:id", updateUser)
+  .listen(PORT, () => console.log(`Listening on ${PORT}`));
 
 showTimes = () => {
-  let result = ''
-  const times = process.env.TIMES || 5
+  let result = "";
+  const times = process.env.TIMES || 5;
   for (i = 0; i < times; i++) {
-    result += i + ' '
+    result += i + " ";
   }
   return result;
-}
+};
