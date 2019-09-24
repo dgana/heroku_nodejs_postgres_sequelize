@@ -242,7 +242,7 @@ sequelize.sync();
 
 const seedUsers = async (req, res) => {
   try {
-    await User.destroy({ truncate: true });
+    // await User.destroy({ truncate: true });
     const result = await User.bulkCreate(seedUser);
     res.status(200).json(result);
   } catch (error) {
