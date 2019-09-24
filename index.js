@@ -17,19 +17,24 @@ app.use(
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: false,
-  user: "dgana",
-  host: "localhost",
-  database: "goess",
-  password: "password",
+  ssl: true,
+  user: "rqthbmcjuxnmnh",
+  host: "ec2-54-235-181-55.compute-1.amazonaws.com",
+  database: "d7e9saqbl28rs9",
+  password: "79de36ff87630899ef531140651809c77ed1830a499675ae4adfdb25a08f0620",
   port: 5432
 });
 
 // Passing parameters separately
-const sequelize = new Sequelize("goess", "dgana", "password", {
-  host: "localhost",
-  dialect: "postgres" /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */
-});
+const sequelize = new Sequelize(
+  "d7e9saqbl28rs9",
+  "rqthbmcjuxnmnh",
+  "79de36ff87630899ef531140651809c77ed1830a499675ae4adfdb25a08f0620",
+  {
+    host: "ec2-54-235-181-55.compute-1.amazonaws.com",
+    dialect: "postgres" /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */
+  }
+);
 
 sequelize
   .authenticate()
@@ -222,7 +227,7 @@ const Travel = sequelize.define(
 
 // TABLE MANAGER APPROVAL
 const ManagerApproval = sequelize.define(
-  "manager",
+  "managerApproval",
   {
     notes: {
       type: Sequelize.STRING
@@ -250,7 +255,7 @@ const ManagerApproval = sequelize.define(
 
 // TABLE HCMGA APPROVAL
 const HCMGAApproval = sequelize.define(
-  "manager",
+  "hcmgaApproval",
   {
     notes: {
       type: Sequelize.STRING
