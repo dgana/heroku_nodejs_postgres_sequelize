@@ -19,7 +19,7 @@ app.use(
 
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: true,
+  ssl: false,
   user: config.user,
   host: config.host,
   database: config.database,
