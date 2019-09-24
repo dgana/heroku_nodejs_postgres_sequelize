@@ -5,6 +5,8 @@ const cool = require("cool-ascii-faces");
 const express = require("express");
 const path = require("path");
 const PORT = process.env.PORT || 5000;
+const config = require("./config");
+const seedUser = require("./seeder/seedUser");
 
 const app = express();
 
@@ -16,25 +18,20 @@ app.use(
 );
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: config.database_url,
   ssl: true,
-  user: "rqthbmcjuxnmnh",
-  host: "ec2-54-235-181-55.compute-1.amazonaws.com",
-  database: "d7e9saqbl28rs9",
-  password: "79de36ff87630899ef531140651809c77ed1830a499675ae4adfdb25a08f0620",
+  user: config.user,
+  host: config.host,
+  database: config.database,
+  password: config.password,
   port: 5432
 });
 
 // Passing parameters separately
-const sequelize = new Sequelize(
-  "d7e9saqbl28rs9",
-  "rqthbmcjuxnmnh",
-  "79de36ff87630899ef531140651809c77ed1830a499675ae4adfdb25a08f0620",
-  {
-    host: "ec2-54-235-181-55.compute-1.amazonaws.com",
-    dialect: "postgres" /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */
-  }
-);
+const sequelize = new Sequelize(config.database, config.user, config.password, {
+  host: config.host,
+  dialect: "postgres" /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */
+});
 
 sequelize
   .authenticate()
@@ -278,6 +275,16 @@ const HCMGAApproval = sequelize.define(
 
 sequelize.sync();
 
+const seedUsers = async (req, res) => {
+  try {
+    await User.destroy({ truncate: true });
+    const result = await User.bulkCreate(seedUser);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const postUser = async (req, res) => {
   try {
     const result = await User.create(req.body);
@@ -340,6 +347,7 @@ app
   })
   .get("/users", getUsers)
   .post("/users", postUser)
+  .post("/seedUsers", seedUsers)
   .put("/users/:id", updateUser)
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
 
