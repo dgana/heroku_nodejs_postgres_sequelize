@@ -28,7 +28,7 @@ module.exports = [
     gender: "male",
     role: "manager",
     image: `${config.baseUrl}/uploads/Webp.net-resizeimage.png`,
-    superior_id: null,
+    superior_id: 4,
     leave_balance: 12,
     reimburse_balance: 5000000,
     phone_number: "081212339173",
@@ -54,5 +54,23 @@ module.exports = [
     birth_date: "05/11/1992",
     birth_place: "surabaya",
     division: "Engineering"
+  },
+  {
+    id: 4,
+    name: "Dena Maharani",
+    email: "dena@gmail.com",
+    group: "I",
+    password: "123456",
+    gender: "female",
+    role: "hcmga",
+    image: `${config.baseUrl}/uploads/Webp.net-resizeimage.png`,
+    superior_id: null,
+    leave_balance: 9,
+    reimburse_balance: 5000000,
+    phone_number: "081290284204",
+    address: "Jl. Cipete IX no.4",
+    birth_date: "05/22/1993",
+    birth_place: "jakarta",
+    division: "Human Capital Management and General Affair"
   }
 ];

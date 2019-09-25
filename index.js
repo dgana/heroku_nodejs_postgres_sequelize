@@ -136,12 +136,43 @@ const Permit = sequelize.define("permit", {
   notes: {
     type: Sequelize.STRING
   },
-  manager_id: {
+  manager_notes: {
     type: Sequelize.STRING
   },
-  hcmga_id: {
+  manager_status: {
+    type: Sequelize.ENUM,
+    values: ["waiting", "rejected", "approved"]
+  },
+  hcmga_notes: {
     type: Sequelize.STRING
+  },
+  hcmga_status: {
+    type: Sequelize.ENUM,
+    values: ["waiting", "rejected", "approved"]
+  },
+  hcmga_by: {
+    type: Sequelize.INTEGER
   }
+});
+
+Permit.belongsTo(User, {
+  as: "user",
+  foreignKey: "created_by"
+});
+
+User.hasMany(Permit, {
+  as: "permit",
+  foreignKey: "id"
+});
+
+Permit.belongsTo(User, {
+  as: "hcmga",
+  foreignKey: "hcmga_by"
+});
+
+User.hasMany(Permit, {
+  as: "hcmga_permit",
+  foreignKey: "id"
 });
 
 /**
@@ -163,12 +194,43 @@ const Leave = sequelize.define("leave", {
   notes: {
     type: Sequelize.STRING
   },
-  manager_id: {
+  manager_notes: {
     type: Sequelize.STRING
   },
-  hcmga_id: {
+  manager_status: {
+    type: Sequelize.ENUM,
+    values: ["waiting", "rejected", "approved"]
+  },
+  hcmga_notes: {
     type: Sequelize.STRING
+  },
+  hcmga_status: {
+    type: Sequelize.ENUM,
+    values: ["waiting", "rejected", "approved"]
+  },
+  hcmga_by: {
+    type: Sequelize.INTEGER
   }
+});
+
+Leave.belongsTo(User, {
+  as: "user",
+  foreignKey: "created_by"
+});
+
+User.hasMany(Leave, {
+  as: "leave",
+  foreignKey: "id"
+});
+
+Leave.belongsTo(User, {
+  as: "hcmga",
+  foreignKey: "hcmga_by"
+});
+
+User.hasMany(Leave, {
+  as: "hcmga_leave",
+  foreignKey: "id"
 });
 
 /**
@@ -199,49 +261,77 @@ const Travel = sequelize.define("travel", {
   notes: {
     type: Sequelize.STRING
   },
-  manager_id: {
+  manager_notes: {
     type: Sequelize.STRING
   },
-  hcmga_id: {
-    type: Sequelize.STRING
-  }
-});
-
-// TABLE MANAGER APPROVAL
-const ManagerApproval = sequelize.define("managerApproval", {
-  notes: {
-    type: Sequelize.STRING
-  },
-  status: {
+  manager_status: {
     type: Sequelize.ENUM,
     values: ["waiting", "rejected", "approved"]
   },
-  approved_by: {
-    type: Sequelize.INTEGER
+  hcmga_notes: {
+    type: Sequelize.STRING
   },
-  rejected_by: {
+  hcmga_status: {
+    type: Sequelize.ENUM,
+    values: ["waiting", "rejected", "approved"]
+  },
+  hcmga_by: {
     type: Sequelize.INTEGER
   }
 });
 
-// TABLE HCMGA APPROVAL
-const HCMGAApproval = sequelize.define("hcmgaApproval", {
-  notes: {
-    type: Sequelize.STRING
-  },
-  status: {
-    type: Sequelize.ENUM,
-    values: ["waiting", "rejected", "approved"]
-  },
-  approved_by: {
-    type: Sequelize.INTEGER
-  },
-  rejected_by: {
-    type: Sequelize.INTEGER
-  }
+Travel.belongsTo(User, {
+  as: "user",
+  foreignKey: "created_by"
+});
+
+User.hasMany(Travel, {
+  as: "travel",
+  foreignKey: "id"
+});
+
+Travel.belongsTo(User, {
+  as: "hcmga",
+  foreignKey: "hcmga_by"
+});
+
+User.hasMany(Travel, {
+  as: "hcmga_travel",
+  foreignKey: "id"
 });
 
 sequelize.sync();
+
+const getToken = token => {
+  return JWT.verify(token, process.env.SECRET_KEY);
+};
+
+const dropPermit = async (req, res) => {
+  try {
+    const result = await Permit.drop();
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const dropLeave = async (req, res) => {
+  try {
+    const result = await Leave.drop();
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const dropTravel = async (req, res) => {
+  try {
+    const result = await Travel.drop();
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const seedUsers = async (req, res) => {
   try {
@@ -268,8 +358,13 @@ const postUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  var id = req.params.id;
   try {
+    const id = req.params.id;
+    const url = `public/uploads/${req.file.originalname}`;
+    fs.writeFileSync(url, req.file.buffer);
+    const file = `uploads/${req.file.originalname}`;
+    const dataFile = `${config.baseUrl}/${file}`;
+    req.body.image = dataFile;
     const result = await User.update(req.body, {
       where: {
         id
@@ -281,12 +376,11 @@ const updateUser = async (req, res) => {
   }
 };
 
-const checkTokenEmployee = (req, res, next) => {
+const checkToken = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
     const result = JWT.verify(auth, process.env.SECRET_KEY);
     if (result.role === "employee") {
-      // req.user = result;
       next();
     } else {
       res.status(401).json({
@@ -300,7 +394,7 @@ const checkTokenEmployee = (req, res, next) => {
   }
 };
 
-const getUsers = async (request, response) => {
+const getUsers = async (req, res) => {
   try {
     const result = await User.findAll({
       include: [
@@ -311,45 +405,365 @@ const getUsers = async (request, response) => {
         }
       ]
     });
-    response.status(200).json(result);
+    res.status(200).json(result);
   } catch (error) {
     console.log(error);
   }
 };
 
-const postLogin = async (request, response) => {
+const getUser = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await User.findOne({
+      include: [
+        {
+          model: User,
+          as: "superior"
+          // attributes: ["id", "name"]
+        }
+      ],
+      where: {
+        id: authResult.id
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const postLogin = async (req, res) => {
   try {
     let checkUser = await User.findOne({
       where: {
-        email: request.body.email
+        email: req.body.email
       }
     });
     checkUser = JSON.parse(JSON.stringify(checkUser));
     if (checkUser) {
-      if (checkUser.password === request.body.password) {
+      if (checkUser.password === req.body.password) {
         const token = JWT.sign(
           { id: checkUser.id, role: checkUser.role },
           process.env.SECRET_KEY,
           { expiresIn: "6h" }
         );
-        response.status(200).json({
+        res.status(200).json({
           message: "You have succesfully logged in!",
           token
         });
       } else {
-        response.status(400).json({
+        res.status(400).json({
           message: "Wrong password!"
         });
       }
     } else {
-      response.status(400).json({
+      res.status(400).json({
         message: "Wrong email!"
       });
     }
   } catch (error) {
-    response.status(401).json({
+    res.status(401).json({
       message: "Unauthorized"
     });
+  }
+};
+
+const postPermit = async (req, res) => {
+  try {
+    req.body.hcmga_status = "waiting";
+    const result = await Permit.create(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(401).json({
+      message: "Unauthorized"
+    });
+  }
+};
+
+const getPermit = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await Permit.findOne({
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: User,
+              as: "superior"
+            }
+          ]
+          // attributes: ["id", "name"]
+        },
+        {
+          model: User,
+          as: "hcmga"
+        }
+      ],
+      where: {
+        hcmga_status: "waiting",
+        created_by: authResult.id
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getPermits = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await Permit.findAll({
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: User,
+              as: "superior"
+            }
+          ]
+          // attributes: ["id", "name"]
+        },
+        {
+          model: User,
+          as: "hcmga"
+        }
+      ],
+      where: {
+        created_by: authResult.id,
+        hcmga_status: "approved" || "rejected"
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const postLeave = async (req, res) => {
+  try {
+    req.body.hcmga_status = "waiting";
+    const result = await Leave.create(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({
+      message: "Unauthorized"
+    });
+  }
+};
+
+const getLeave = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await Leave.findOne({
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: User,
+              as: "superior"
+            }
+          ]
+          // attributes: ["id", "name"]
+        },
+        {
+          model: User,
+          as: "hcmga"
+        }
+      ],
+      where: {
+        hcmga_status: "waiting",
+        created_by: authResult.id
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getLeaves = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await Leave.findAll({
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: User,
+              as: "superior"
+            }
+          ]
+          // attributes: ["id", "name"]
+        },
+        {
+          model: User,
+          as: "hcmga"
+        }
+      ],
+      where: {
+        created_by: authResult.id,
+        hcmga_status: "approved" || "rejected"
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const postTravel = async (req, res) => {
+  try {
+    req.body.hcmga_status = "waiting";
+    const result = await Travel.create(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({
+      message: "Unauthorized"
+    });
+  }
+};
+
+const getTravel = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await Travel.findOne({
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: User,
+              as: "superior"
+            }
+          ]
+          // attributes: ["id", "name"]
+        },
+        {
+          model: User,
+          as: "hcmga"
+        }
+      ],
+      where: {
+        hcmga_status: "waiting",
+        created_by: authResult.id
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getTravels = async (req, res) => {
+  try {
+    const authResult = getToken(req.headers.authorization);
+    const result = await Travel.findAll({
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: User,
+              as: "superior"
+            }
+          ]
+          // attributes: ["id", "name"]
+        },
+        {
+          model: User,
+          as: "hcmga"
+        }
+      ],
+      where: {
+        created_by: authResult.id,
+        hcmga_status: "approved" || "rejected"
+      }
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updatePermit = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await Permit.update(
+      {
+        manager_notes: req.body.manager_notes,
+        manager_status: req.body.manager_status,
+        hcmga_notes: req.body.hcmga_notes,
+        hcmga_status: req.body.hcmga_status,
+        hcmga_by: req.body.hcmga_by
+      },
+      {
+        where: {
+          id
+        }
+      }
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateLeave = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await Leave.update(
+      {
+        manager_notes: req.body.manager_notes,
+        manager_status: req.body.manager_status,
+        hcmga_notes: req.body.hcmga_notes,
+        hcmga_status: req.body.hcmga_status,
+        hcmga_by: req.body.hcmga_by
+      },
+      {
+        where: {
+          id
+        }
+      }
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateTravel = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await Travel.update(
+      {
+        manager_notes: req.body.manager_notes,
+        manager_status: req.body.manager_status,
+        hcmga_notes: req.body.hcmga_notes,
+        hcmga_status: req.body.hcmga_status,
+        hcmga_by: req.body.hcmga_by
+      },
+      {
+        where: {
+          id
+        }
+      }
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -357,9 +771,32 @@ app
   .use(bodyParser.json())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(express.static(path.join(__dirname, "public")))
+
   .post("/login", postLogin)
-  .get("/users", getUsers)
-  .post("/users", checkTokenEmployee, upload.single("profile"), postUser)
-  .put("/users/:id", checkTokenEmployee, updateUser)
+
+  .post("/dropPermit", dropPermit)
+  .post("/dropLeave", dropLeave)
+  .post("/dropTravel", dropTravel)
+
   .post("/seedUsers", seedUsers)
+  .get("/users", checkToken, getUsers)
+  .get("/user", checkToken, getUser)
+  .post("/users", checkToken, upload.single("profile"), postUser)
+  .put("/users/:id", checkToken, updateUser)
+
+  .post("/permit", checkToken, postPermit)
+  .get("/permit", checkToken, getPermit)
+  .get("/permits", checkToken, getPermits)
+
+  .post("/leave", checkToken, postLeave)
+  .get("/leave", checkToken, getLeave)
+  .get("/leaves", checkToken, getLeaves)
+
+  .post("/travel", checkToken, postTravel)
+  .get("/travel", checkToken, getTravel)
+  .get("/travels", checkToken, getTravels)
+
+  .put("/permit/:id", checkToken, updatePermit)
+  .put("/leave/:id", checkToken, updateLeave)
+  .put("/travel/:id", checkToken, updateTravel)
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
